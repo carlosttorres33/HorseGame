@@ -1,0 +1,20 @@
+<resources>
+    <string name="app_name">HorseGame</string>
+
+    <string name="title">Horse Game</string>
+    <string name="level">Nivel</string>
+    <string name="moves">Movimientos</string>
+    <string name="time">Tiempo</string>
+    <string name="lives">Vidas</string>
+    <string name="options">Opciones</string>
+    <string name="instructions">Mueve el caballo por el tablero hasta completar todas las celdas</string>
+    <string name="credits">Juego creado por Carlos Toral Torres</string>
+
+    <string name="premium">Presiona aquí para quitar los anuncios</string>
+    <string name="PremiumTitle">Obten acceso premium para siempre</string>
+    <string name="premiumBanefit1">Sin anuncions</string>
+    <string name="premiumBanefit2">Vidas ilimitadas</string>
+    <string name="premiumBanefit3">Manten tu maxima puntuación</string>
+    <string name="pay">Paga solo 1$</string>
+
+</resources>
