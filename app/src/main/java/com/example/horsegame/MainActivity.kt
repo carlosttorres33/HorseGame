@@ -43,10 +43,15 @@ class MainActivity : AppCompatActivity() {
     private var cellSelected_x = 0
     private var cellSelected_y = 0
 
-    private var movesRequired = 4
-    private var moves = 64
-    private var levelMoves = 64
+    private var nextLevel = false
+    private var movesRequired = 0
+    private var moves = 0
+    private var levelMoves = 0
     private var level = 1
+    private var lives = 1
+    private var score_lives = 1
+    private var scoreLevel = 1
+
 
     private var bonus = 0
     private var width_bonus = 0
@@ -152,19 +157,28 @@ class MainActivity : AppCompatActivity() {
     private fun initScreenGame(){
 
         setSizeBoard()
-        hide_message()
+        hide_message(false)
 
     }
 
     private fun setFirstPosition(){
         var x = 0
         var y = 0
-        x = (0..7).random()
-        y = (0..7).random()
+
+        var firstPosition = false
+
+        while (firstPosition == false){
+            x = (0..7).random()
+            y = (0..7).random()
+
+            if (board[x][y] == 0) firstPosition = true
+            checkOption(x,y)
+            if (options == 0) firstPosition = false
+
+        }
 
         cellSelected_x = x
         cellSelected_y = y
-
 
         selectCell(x,y)
 
@@ -247,6 +261,7 @@ class MainActivity : AppCompatActivity() {
     private fun showMessage(title: String, action: String, gameOver: Boolean){
 
         gaming = false
+        nextLevel = !gameOver
 
         var lvMessage = findViewById<LinearLayout>(R.id.lyMessage)
         lvMessage.visibility = View.VISIBLE
@@ -360,8 +375,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-
-
     }
 
     private fun paintOptions(x: Int, y:Int){
@@ -433,10 +446,14 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-    private fun hide_message(){
+    private fun hide_message(start: Boolean){
 
         var lyMessage = findViewById<LinearLayout>(R.id.lyMessage)
         lyMessage.visibility = View.INVISIBLE
+
+        if (start){
+            startGame()
+        }
 
     }
 
@@ -570,12 +587,161 @@ class MainActivity : AppCompatActivity() {
 
     private fun startGame(){
 
+        setLevel()
+        setLevelParameters()
+
         gaming = true
+
         resetBoard()
         clearBoard()
+
+        setBoardLevel()
         setFirstPosition()
+
+
         resetTime()
         startTime()
+
+    }
+
+    private fun setBoardLevel(){
+
+        when(level){
+            2-> paintLevel_2()
+            3-> paintLevel_3()
+            4-> paintLevel_4()
+            5-> paintLevel_5()
+            /*6-> paintLevel_6()
+            7-> paintLevel_7()
+            8-> paintLevel_8()
+            9-> paintLevel_9()
+            10-> paintLevel_10()
+            11-> paintLevel_11()
+            12-> paintLevel_12()
+            13-> paintLevel_13(*/
+        }
+
+    }
+
+    private fun paintLevel_2(){
+        paintColumn(6)
+    }
+
+    private fun paintLevel_3(){
+        for (i in 0..7){
+            for (j in 0..7){
+                board [j][i] = 1
+                paintHorseCell(j, i, "previus_cell")
+            }
+        }
+    }
+
+    private fun paintLevel_4(){
+        paintLevel_3()
+        paintLevel_5()
+    }
+
+    private fun paintLevel_5(){
+        for (i in 0..3){
+            for (j in 0..3){
+                board[j][i] = 1
+                paintHorseCell(j, i, "previus_cell")
+            }
+        }
+    }
+
+    private fun paintColumn(column: Int){
+        for (i in 0..7){
+            board[column][i] = 1
+            paintHorseCell(column, i, "previus_cell")
+        }
+    }
+
+    private fun setLevel(){
+
+        if (nextLevel){
+
+            level++
+
+        }else{
+
+            lives--
+
+            if (lives < 1){
+                level = 1
+                lives = 1
+            }
+
+        }
+
+    }
+
+    private fun setLevelParameters(){
+
+        var tvLiveData = findViewById<TextView>(R.id.tvLivesCount)
+        tvLiveData.text = lives.toString()
+
+        score_lives = lives
+
+        var tvLevelNumber = findViewById<TextView>(R.id.tvLevelNumber)
+        tvLevelNumber.text = level.toString()
+        scoreLevel = level
+
+        bonus = 0
+        var  tvBonusData = findViewById<TextView>(R.id.tvBonusData)
+        tvBonusData.text = ""
+
+        setLevelMoves()
+        moves = levelMoves
+
+        movesRequired = setMovesRequired()
+
+    }
+
+    private fun setLevelMoves(){
+        when (level){
+            1-> levelMoves = 64
+            2-> levelMoves = 56
+            3-> levelMoves = 32
+            4-> levelMoves = 16
+            5-> levelMoves = 48
+            6-> levelMoves = 36
+            7-> levelMoves = 48
+            8-> levelMoves = 49
+            9-> levelMoves = 59
+            10-> levelMoves = 48
+            11-> levelMoves = 64
+            12-> levelMoves = 48
+            13-> levelMoves = 48
+        }
+    }
+
+    private fun setMovesRequired(): Int{
+        var movesRequired = 0
+
+        when (level){
+            1-> movesRequired = 8
+            2-> movesRequired = 10
+            3-> movesRequired = 12
+            4-> movesRequired = 10
+            5-> movesRequired = 10
+            6-> movesRequired = 12
+            7-> movesRequired = 5
+            8-> movesRequired = 7
+            9-> movesRequired = 9
+            10-> movesRequired = 8
+            11-> movesRequired = 1000
+            12-> movesRequired = 5
+            13-> movesRequired = 5
+        }
+
+        return movesRequired
+
+    }
+
+    fun launchAction(v: View){
+
+        hide_message(true)
 
     }
 
