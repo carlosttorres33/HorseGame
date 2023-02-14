@@ -1,15 +1,21 @@
 package com.example.horsegame
 
 import android.app.Activity
+import android.content.ContentValues
 import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Point
 import android.media.Image
+import android.media.MediaScannerConnection
 import android.net.IpSecManager
+import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Environment
 import android.os.Handler
 import android.os.Looper
+import android.provider.MediaStore
 import android.util.TypedValue
 import android.view.View
 import android.widget.*
@@ -17,6 +23,10 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.test.runner.screenshot.ScreenCapture
 import androidx.test.runner.screenshot.Screenshot.capture
+import java.io.File
+import java.io.FileOutputStream
+import java.text.SimpleDateFormat
+import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.jar.Manifest
 
@@ -28,12 +38,15 @@ class MainActivity : AppCompatActivity() {
     private var timeInSeconds : Long = 0
     private var gaming = true
 
+    private var string_share = ""
+
     private var cellSelected_x = 0
     private var cellSelected_y = 0
 
     private var movesRequired = 4
     private var moves = 64
     private var levelMoves = 64
+    private var level = 1
 
     private var bonus = 0
     private var width_bonus = 0
@@ -245,8 +258,10 @@ class MainActivity : AppCompatActivity() {
         var score: String = ""
         if (gameOver){
             score = "Puntos: " + (levelMoves-moves) + "/" + levelMoves
+            string_share = "No puedo con este nivel!!! Nivel: $level (" + score +") https://github.com/carlosttorres33"
         } else {
             score = tvTimeData.text.toString()
+            string_share = "Nuevo nivel completado!!! Nivel: $level (" + score +") https://github.com/carlosttorres33"
         }
         var tvScoreMessage = findViewById<TextView>(R.id.tvScoreMessage)
         tvScoreMessage.text = score
@@ -435,6 +450,77 @@ class MainActivity : AppCompatActivity() {
 
         var ssc: ScreenCapture = capture(this)
         bitmap = ssc.getBitmap()
+
+        if (bitmap != null){
+
+            var idGame = SimpleDateFormat("yyyy/MM/dd").format(Date())
+            idGame = idGame.replace(":", "")
+            idGame = idGame.replace("/", "")
+
+            val path = saveImage(bitmap, "${idGame}.jpg")
+
+            val bmpUri = Uri.parse(path)
+
+            val shareIntent = Intent(Intent.ACTION_SEND)
+            shareIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            shareIntent.putExtra(Intent.EXTRA_STREAM, bmpUri)
+            shareIntent.putExtra(Intent.EXTRA_TEXT, string_share)
+            shareIntent.type = "image/png"
+
+            val finalShareIntent = Intent.createChooser(shareIntent, "Elige la app para compartir")
+            finalShareIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            this.startActivity(finalShareIntent)
+
+        }
+
+    }
+
+    private fun saveImage(bitmap: Bitmap?, fileName:String): String?{
+
+        if (bitmap == null){
+            return null
+        }
+
+        if(android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q){
+
+            val contentValues = ContentValues().apply {
+                put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
+                put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
+                put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/Screenshots")
+            }
+
+            val uri = this.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+
+            if (uri != null){
+                this.contentResolver.openOutputStream(uri).use {
+                    if (it==null)
+                        return@use
+
+                    bitmap.compress(Bitmap.CompressFormat.PNG, 85, it)
+                    it.flush()
+                    it.close()
+
+                    MediaScannerConnection.scanFile(this, arrayOf( uri.toString() ), null, null )
+                }
+            }
+
+            return uri.toString()
+
+        }
+
+        val filePath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES + "/Screenshots").absolutePath
+
+        val dir = File(filePath)
+        if (!dir.exists()) dir.mkdir()
+        val file = File(dir, fileName)
+        val fOut= FileOutputStream(file)
+
+        bitmap.compress(Bitmap.CompressFormat.PNG, 85, fOut)
+        fOut.flush()
+        fOut.close()
+
+        MediaScannerConnection.scanFile(this, arrayOf(file.toString()), null, null)
+        return filePath
 
     }
 
