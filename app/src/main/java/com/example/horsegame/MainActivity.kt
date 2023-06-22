@@ -662,6 +662,7 @@ class MainActivity : AppCompatActivity() {
         if (nextLevel){
 
             level++
+            setLives()
 
         }else{
 
@@ -674,6 +675,20 @@ class MainActivity : AppCompatActivity() {
 
         }
 
+    }
+
+    private fun setLives() {
+        when(level){
+            1->{lives = 1}
+            2->{lives = 4}
+            3->{lives = 3   }
+            4->{lives = 4}
+            5->{lives = 3}
+            6->{lives = 5}
+            7->{ lives = 5 }
+            else->{ lives = 10}
+
+        }
     }
 
     private fun setLevelParameters(){
