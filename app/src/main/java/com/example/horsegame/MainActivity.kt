@@ -16,6 +16,7 @@ import android.os.Environment
 import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
+import android.util.Log
 import android.util.TypedValue
 import android.view.View
 import android.widget.*
@@ -23,6 +24,15 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.test.runner.screenshot.ScreenCapture
 import androidx.test.runner.screenshot.Screenshot.capture
+import com.google.android.gms.ads.AdError
+import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.AdSize
+import com.google.android.gms.ads.AdView
+import com.google.android.gms.ads.FullScreenContentCallback
+import com.google.android.gms.ads.LoadAdError
+import com.google.android.gms.ads.MobileAds
+import com.google.android.gms.ads.interstitial.InterstitialAd
+import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
 import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
@@ -31,6 +41,10 @@ import java.util.concurrent.TimeUnit
 import java.util.jar.Manifest
 
 class MainActivity : AppCompatActivity() {
+
+    private var mInterstitialAd: InterstitialAd? = null
+
+    private var unloadedAd: Boolean = true
 
     private var bitmap : Bitmap? = null
 
@@ -69,7 +83,79 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         initScreenGame()
+        initAds()
         startGame()
+
+    }
+
+    private fun initAds(){
+        MobileAds.initialize(this){
+
+            val adView = AdView(this)
+            adView.adSize = AdSize.BANNER
+            adView.adUnitId = "ca-app-pub-3940256099942544/6300978111"
+
+            var lyAdsBanner = findViewById<LinearLayout>(R.id.lyAdsBanner)
+            lyAdsBanner.addView(adView)
+
+            val adRequest = AdRequest.Builder().build()
+            adView.loadAd(adRequest)
+
+        }
+    }
+
+    private fun showInterstitial(){
+        if (mInterstitialAd != null) {
+
+            unloadedAd = true
+
+            mInterstitialAd?.fullScreenContentCallback = object: FullScreenContentCallback() {
+                override fun onAdClicked() {
+                    // Called when a click is recorded for an ad.
+                    //Log.d(TAG, "Ad was clicked.")
+                }
+
+                override fun onAdDismissedFullScreenContent() {
+                    // Called when ad is dismissed.
+                    //Log.d(TAG, "Ad dismissed fullscreen content.")
+                    mInterstitialAd = null
+                }
+
+                override fun onAdFailedToShowFullScreenContent(adError: AdError?) {
+                    // Called when ad fails to show.
+                    //Log.e(TAG, "Ad failed to show fullscreen content.")
+                    mInterstitialAd = null
+                }
+
+                override fun onAdImpression() {
+                    // Called when an impression is recorded for an ad.
+                    //Log.d(TAG, "Ad recorded an impression.")
+                }
+
+                override fun onAdShowedFullScreenContent() {
+                    // Called when ad is shown.
+                    //Log.d(TAG, "Ad showed fullscreen content.")
+                }
+            }
+
+            mInterstitialAd?.show(this)
+        }
+    }
+
+    private fun getReadyAds(){
+        var adRequest = AdRequest.Builder().build()
+
+        unloadedAd = false
+
+        InterstitialAd.load(this,"ca-app-pub-3940256099942544/1033173712", adRequest, object : InterstitialAdLoadCallback() {
+            override fun onAdFailedToLoad(adError: LoadAdError) {
+                mInterstitialAd = null
+            }
+
+            override fun onAdLoaded(interstitialAd: InterstitialAd) {
+                mInterstitialAd = interstitialAd
+            }
+        })
 
     }
 
@@ -272,6 +358,8 @@ class MainActivity : AppCompatActivity() {
         var tvTimeData = findViewById<TextView>(R.id.tvTimeCount)
         var score: String = ""
         if (gameOver){
+            showInterstitial()
+
             score = "Puntos: " + (levelMoves-moves) + "/" + levelMoves
             string_share = "No puedo con este nivel!!! Nivel: $level (" + score +") https://github.com/carlosttorres33"
         } else {
@@ -586,6 +674,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startGame(){
+
+        if(unloadedAd == true) getReadyAds()
+        getReadyAds()
 
         setLevel()
         setLevelParameters()
